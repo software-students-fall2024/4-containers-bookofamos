@@ -18,7 +18,7 @@ from app import app, generate_stats_doc, retry_request
 
 
 @pytest.fixture
-def client():
+def flask_client():
     """
     Provide a Flask test client for testing application routes.
     Yields:
@@ -266,6 +266,7 @@ def test_result_route_no_image(flask_client: FlaskClient):
     Args:
         client (FlaskClient):  Flask client used to simulate HTTP requests.
     """
-    response = flask_client.post("/result", data={}, content_type="multipart/form-data")
+    response = flask_client.post(
+        "/result", data={}, content_type="multipart/form-data")
     assert response.status_code == 400
     assert b"No image file provided" in response.data
