@@ -2,6 +2,7 @@
 A Flask application for predicting Rock-Paper-Scissors gestures using the Roboflow Inference API
 and storing predictions in MongoDB.
 """
+
 import os
 import logging
 from flask import Flask, request, jsonify

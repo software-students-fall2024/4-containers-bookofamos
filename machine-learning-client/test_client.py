@@ -4,7 +4,7 @@
 # pytest -v
 
 # pylint web-app/ machine-learning-client/
-# black . 
+# black .
 
 
 import pytest
