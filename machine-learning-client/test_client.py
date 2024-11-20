@@ -1,3 +1,5 @@
+"""Test module for Machine learning client"""
+
 # test_client.py
 # cd machine-learning-client
 # pytest test_client.py -v
@@ -7,25 +9,39 @@
 # black .
 
 
-import pytest
 from unittest.mock import patch, MagicMock
 from io import BytesIO
-from client import app
 from requests.exceptions import RequestException
 from pymongo.errors import PyMongoError
+import pytest
+from client import app
 
 
 @pytest.fixture
 def client():
+    """
+    Provide a Flask test client for testing application routes.
+    Yields:
+        FlaskClient: A test client for the Flask application.
+    """
     app.config["TESTING"] = True
-    with app.test_client() as client:
-        yield client
+    with app.test_client() as flask_client:
+        yield flask_client
 
 
 # Test successful prediction
 @patch("client.rf_client")
 @patch("client.collection")
-def test_predict_success(mock_collection, mock_rf_client, client):
+def test_predict_success(mock_collection, mock_rf_client, flask_client):
+    """
+    Test successful predictions.
+
+    Args:
+        mock_collection (MagicMock): Mocked MongoDB collection.
+        mock_rf_client (MagicMock): Mocked random forest client.
+        flask_client (FlaskClient): Flask test client for simulating HTTP requests.
+    """
+
     # Mock the inference result
     mock_rf_client.infer.return_value = {
         "predictions": [{"class": "Rock", "confidence": 0.95}]
@@ -37,7 +53,8 @@ def test_predict_success(mock_collection, mock_rf_client, client):
     # Create a dummy image file
     data = {"image": (BytesIO(b"fake image data"), "test_image.jpg")}
 
-    response = client.post("/predict", content_type="multipart/form-data", data=data)
+    response = flask_client.post(
+        "/predict", content_type="multipart/form-data", data=data)
 
     assert response.status_code == 200
     json_data = response.get_json()
@@ -52,8 +69,15 @@ def test_predict_success(mock_collection, mock_rf_client, client):
 
 
 # Test prediction with no image provided
-def test_predict_no_image(client):
-    response = client.post("/predict", content_type="multipart/form-data", data={})
+def test_predict_no_image(flask_client):
+    """
+    Test predictions with no image
+
+    Args:
+        flask_client (FlaskClient): Flask test client for simulating HTTP requests.
+    """
+    response = flask_client.post(
+        "/predict", content_type="multipart/form-data", data={})
     assert response.status_code == 400
     json_data = response.get_json()
     assert json_data["error"] == "No image file provided"
@@ -61,13 +85,21 @@ def test_predict_no_image(client):
 
 # Test inference API failure
 @patch("client.rf_client")
-def test_predict_inference_failure(mock_rf_client, client):
+def test_predict_inference_failure(mock_rf_client, flask_client):
+    """
+    Test preditction with an inference failure.
+
+    Args:
+        mock_rf_client (MagicMock): Mocked random forest client.
+        flask_client (FlaskClient): Flask test client for simulating HTTP requests.
+    """
     # Simulate an inference API failure with a caught exception
     mock_rf_client.infer.side_effect = RequestException("Inference API error")
 
     data = {"image": (BytesIO(b"fake image data"), "test_image.jpg")}
 
-    response = client.post("/predict", content_type="multipart/form-data", data=data)
+    response = flask_client.post(
+        "/predict", content_type="multipart/form-data", data=data)
 
     assert response.status_code == 500
     json_data = response.get_json()
@@ -77,18 +109,28 @@ def test_predict_inference_failure(mock_rf_client, client):
 # Test MongoDB insertion failure
 @patch("client.rf_client")
 @patch("client.collection")
-def test_predict_mongodb_failure(mock_collection, mock_rf_client, client):
+def test_predict_mongodb_failure(mock_collection, mock_rf_client, flask_client):
+    """
+    Test preditction with a database failure.
+
+    Args:
+        mock_collection (MagicMock): Mocked MongoDB collection.
+        mock_rf_client (MagicMock): Mocked random forest client.
+        flask_client (FlaskClient): Flask test client for simulating HTTP requests.
+    """
     # Mock the inference result
     mock_rf_client.infer.return_value = {
         "predictions": [{"class": "Paper", "confidence": 0.85}]
     }
 
     # Simulate a MongoDB insertion failure with a caught exception
-    mock_collection.insert_one.side_effect = PyMongoError("MongoDB insertion error")
+    mock_collection.insert_one.side_effect = PyMongoError(
+        "MongoDB insertion error")
 
     data = {"image": (BytesIO(b"fake image data"), "test_image.jpg")}
 
-    response = client.post("/predict", content_type="multipart/form-data", data=data)
+    response = flask_client.post(
+        "/predict", content_type="multipart/form-data", data=data)
 
     assert response.status_code == 500
     json_data = response.get_json()
@@ -99,7 +141,14 @@ def test_predict_mongodb_failure(mock_collection, mock_rf_client, client):
 @patch("client.rf_client")
 @patch("client.collection")
 @patch("os.makedirs")
-def test_predict_file_not_found(mock_makedirs, mock_collection, mock_rf_client, client):
+def test_predict_file_not_found(mock_rf_client, flask_client):
+    """
+    Test preditction with a file not found error.
+
+    Args:
+        mock_rf_client (MagicMock): Mocked random forest client.
+        flask_client (FlaskClient): Flask test client for simulating HTTP requests.
+    """
     # Mock the inference result
     mock_rf_client.infer.return_value = {
         "predictions": [{"class": "Scissors", "confidence": 0.90}]
@@ -112,7 +161,7 @@ def test_predict_file_not_found(mock_makedirs, mock_collection, mock_rf_client, 
     ):
         data = {"image": (BytesIO(b"fake image data"), "test_image.jpg")}
 
-        response = client.post(
+        response = flask_client.post(
             "/predict", content_type="multipart/form-data", data=data
         )
 
@@ -124,13 +173,21 @@ def test_predict_file_not_found(mock_makedirs, mock_collection, mock_rf_client, 
 # Test invalid inference response (missing 'class' key)
 @patch("client.rf_client")
 @patch("client.collection")
-def test_predict_invalid_inference_response(mock_collection, mock_rf_client, client):
+def test_predict_invalid_inference_response(mock_rf_client, flask_client):
+    """
+    Test preditction with an invalid inference response.
+
+    Args:
+        mock_rf_client (MagicMock): Mocked random forest client.
+        flask_client (FlaskClient): Flask test client for simulating HTTP requests.
+    """
     # Mock the inference result with missing 'class' key
     mock_rf_client.infer.return_value = {"predictions": [{"confidence": 0.80}]}
 
     data = {"image": (BytesIO(b"fake image data"), "test_image.jpg")}
 
-    response = client.post("/predict", content_type="multipart/form-data", data=data)
+    response = flask_client.post(
+        "/predict", content_type="multipart/form-data", data=data)
 
     assert response.status_code == 200
     json_data = response.get_json()
