@@ -54,7 +54,8 @@ def test_predict_success(mock_collection, mock_rf_client, flask_client):
     data = {"image": (BytesIO(b"fake image data"), "test_image.jpg")}
 
     response = flask_client.post(
-        "/predict", content_type="multipart/form-data", data=data)
+        "/predict", content_type="multipart/form-data", data=data
+    )
 
     assert response.status_code == 200
     json_data = response.get_json()
@@ -77,7 +78,8 @@ def test_predict_no_image(flask_client):
         flask_client (FlaskClient): Flask test client for simulating HTTP requests.
     """
     response = flask_client.post(
-        "/predict", content_type="multipart/form-data", data={})
+        "/predict", content_type="multipart/form-data", data={}
+    )
     assert response.status_code == 400
     json_data = response.get_json()
     assert json_data["error"] == "No image file provided"
@@ -99,7 +101,8 @@ def test_predict_inference_failure(mock_rf_client, flask_client):
     data = {"image": (BytesIO(b"fake image data"), "test_image.jpg")}
 
     response = flask_client.post(
-        "/predict", content_type="multipart/form-data", data=data)
+        "/predict", content_type="multipart/form-data", data=data
+    )
 
     assert response.status_code == 500
     json_data = response.get_json()
@@ -124,13 +127,13 @@ def test_predict_mongodb_failure(mock_collection, mock_rf_client, flask_client):
     }
 
     # Simulate a MongoDB insertion failure with a caught exception
-    mock_collection.insert_one.side_effect = PyMongoError(
-        "MongoDB insertion error")
+    mock_collection.insert_one.side_effect = PyMongoError("MongoDB insertion error")
 
     data = {"image": (BytesIO(b"fake image data"), "test_image.jpg")}
 
     response = flask_client.post(
-        "/predict", content_type="multipart/form-data", data=data)
+        "/predict", content_type="multipart/form-data", data=data
+    )
 
     assert response.status_code == 500
     json_data = response.get_json()
@@ -187,7 +190,8 @@ def test_predict_invalid_inference_response(mock_rf_client, flask_client):
     data = {"image": (BytesIO(b"fake image data"), "test_image.jpg")}
 
     response = flask_client.post(
-        "/predict", content_type="multipart/form-data", data=data)
+        "/predict", content_type="multipart/form-data", data=data
+    )
 
     assert response.status_code == 200
     json_data = response.get_json()
