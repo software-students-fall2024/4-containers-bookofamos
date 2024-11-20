@@ -35,11 +35,11 @@ jobs:
 
       - name: Run tests in web-app Docker container
         run: |
-          docker run --rm web-app pytest /web-app/test_app.py --verbose
+          docker run --rm web-app pytest /app/test_app.py --verbose
 
       - name: Run tests in machine-learning-client Docker container
         run: |
-          docker run --rm ml-client pytest /machine-learning-client/test_client.py --verbose
+          docker run --rm ml-client pytest /app/test_client.py --verbose
 
       - name: Cleanup Docker images
         run: |
