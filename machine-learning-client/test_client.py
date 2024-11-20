@@ -145,7 +145,7 @@ def test_predict_mongodb_failure(mock_collection, mock_rf_client, flask_client):
 @patch("client.rf_client")
 @patch("client.collection")
 @patch("os.makedirs")
-def test_predict_file_not_found(mock_rf_client, flask_client):
+def test_predict_file_not_found(mock_rf_client, mock_collection, mock_makedirs, flask_client):
     """
     Test preditction with a file not found error.
 
@@ -173,11 +173,14 @@ def test_predict_file_not_found(mock_rf_client, flask_client):
         json_data = response.get_json()
         assert "Prediction error" in json_data["error"]
 
+    mock_makedirs.assert_called_once()
+    mock_collection.assert_called_once()
+
 
 # Test invalid inference response (missing 'class' key)
 @patch("client.rf_client")
 @patch("client.collection")
-def test_predict_invalid_inference_response(mock_rf_client, flask_client):
+def test_predict_invalid_inference_response(mock_collection, mock_rf_client, flask_client):
     """
     Test preditction with an invalid inference response.
 
@@ -198,3 +201,5 @@ def test_predict_invalid_inference_response(mock_rf_client, flask_client):
     json_data = response.get_json()
     assert json_data["gesture"] == "Unknown"
     assert json_data["confidence"] == 0
+
+    mock_collection.assert_called_once()
