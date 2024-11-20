@@ -17,16 +17,16 @@ import pytest
 from client import app
 
 
-@pytest.fixture
-def flask_client():
+@pytest.fixture(name="flask_client")
+def flask_client_fixture():
     """
     Provide a Flask test client for testing application routes.
     Yields:
         FlaskClient: A test client for the Flask application.
     """
     app.config["TESTING"] = True
-    with app.test_client() as flask_client:
-        yield flask_client
+    with app.test_client() as temp_client:
+        yield temp_client
 
 
 # Test successful prediction

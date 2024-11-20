@@ -17,16 +17,16 @@ import requests
 from app import app, generate_stats_doc, retry_request
 
 
-@pytest.fixture
-def flask_client():
+@pytest.fixture(name="flask_client")
+def flask_client_fixture():
     """
     Provide a Flask test client for testing application routes.
     Yields:
         FlaskClient: A test client for the Flask application.
     """
     app.config["TESTING"] = True
-    with app.test_client() as flask_client:
-        yield flask_client
+    with app.test_client() as temp_client:
+        yield temp_client
 
 
 @patch("app.collection")
@@ -127,7 +127,7 @@ def test_retry_request_all_failures(mock_post):
 
 # Tests for routes
 @patch("app.generate_stats_doc", return_value=str(ObjectId()))
-def test_home_route(flask_client: FlaskClient):
+def test_home_route(mock_generate_stats_doc, flask_client):
     """
     Test the home route of the application.
 
@@ -137,10 +137,11 @@ def test_home_route(flask_client: FlaskClient):
     response = flask_client.get("/")
     assert response.status_code == 200
     assert "db_object_id" in response.headers["Set-Cookie"]
+    mock_generate_stats_doc.assert_called_once()
 
 
 @patch("app.generate_stats_doc", return_value=str(ObjectId()))
-def test_home_route_with_existing_cookie(flask_client: FlaskClient):
+def test_home_route_with_existing_cookie(flask_client):
     """
     Test home route when a db_object_id cookie already exists.
 
