@@ -30,8 +30,5 @@ docker-compose up --build
 Once the image is running, simply visit the web-app at:
 http://127.0.0.1:5003/
 
-### Small Disclaimer
-The terminal output when running the mage might refer to a http://127.0.0.1:5000 link. That is for the ML Client -- only try that link if the above http://127.0.0.1:5003/ link was not working.
-
 ## Requirements
 The only requirement needed to run this project is [Docker](https://www.docker.com/). See install instruction on [their website](https://docs.docker.com/engine/install/).
