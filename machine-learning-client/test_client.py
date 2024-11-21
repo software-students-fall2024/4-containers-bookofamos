@@ -127,8 +127,7 @@ def test_predict_mongodb_failure(mock_collection, mock_rf_client, flask_client):
     }
 
     # Simulate a MongoDB insertion failure with a caught exception
-    mock_collection.insert_one.side_effect = PyMongoError(
-        "MongoDB insertion error")
+    mock_collection.insert_one.side_effect = PyMongoError("MongoDB insertion error")
 
     data = {"image": (BytesIO(b"fake image data"), "test_image.jpg")}
 
@@ -145,7 +144,9 @@ def test_predict_mongodb_failure(mock_collection, mock_rf_client, flask_client):
 @patch("client.rf_client")
 @patch("client.collection")
 @patch("os.makedirs")
-def test_predict_file_not_found(mock_rf_client, mock_collection, mock_makedirs, flask_client):
+def test_predict_file_not_found(
+    mock_rf_client, mock_collection, mock_makedirs, flask_client
+):
     """
     Test preditction with a file not found error.
 
@@ -180,7 +181,9 @@ def test_predict_file_not_found(mock_rf_client, mock_collection, mock_makedirs, 
 # Test invalid inference response (missing 'class' key)
 @patch("client.rf_client")
 @patch("client.collection")
-def test_predict_invalid_inference_response(mock_collection, mock_rf_client, flask_client):
+def test_predict_invalid_inference_response(
+    mock_collection, mock_rf_client, flask_client
+):
     """
     Test preditction with an invalid inference response.
 

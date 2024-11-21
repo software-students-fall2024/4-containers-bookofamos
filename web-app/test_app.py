@@ -169,7 +169,9 @@ def test_index_route(mock_generate_stats_doc, flask_client: FlaskClient):
 
 @patch("app.collection")
 @patch("app.generate_stats_doc", return_value=str(ObjectId()))
-def test_statistics_route(mock_generate_stats_doc, mock_collection, flask_client: FlaskClient):
+def test_statistics_route(
+    mock_generate_stats_doc, mock_collection, flask_client: FlaskClient
+):
     """
     Test statistics page route
 
@@ -192,7 +194,9 @@ def test_statistics_route(mock_generate_stats_doc, mock_collection, flask_client
 
 @patch("app.retry_request")
 @patch("app.collection.update_one")
-def test_result_route_success(mock_retry_request, mock_update_one, flask_client: FlaskClient):
+def test_result_route_success(
+    mock_retry_request, mock_update_one, flask_client: FlaskClient
+):
     """
     Test results route for a successful request
 
@@ -271,8 +275,7 @@ def test_result_route_no_image(mock_retry_request, flask_client: FlaskClient):
     Args:
         client (FlaskClient):  Flask client used to simulate HTTP requests.
     """
-    response = flask_client.post(
-        "/result", data={}, content_type="multipart/form-data")
+    response = flask_client.post("/result", data={}, content_type="multipart/form-data")
     assert response.status_code == 400
     assert b"No image file provided" in response.data
     mock_retry_request.assert_not_called()
