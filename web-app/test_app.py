@@ -1,6 +1,7 @@
 """
 Unit tests for the Flask application defined in `app.py`.
 """
+
 # test_app.py
 # cd web-app
 # pytest test_app.py -v
@@ -19,16 +20,16 @@ import requests
 from app import app, generate_stats_doc, retry_request
 
 
-@pytest.fixture
-def client():
+@pytest.fixture(name="flask_client")
+def flask_client_fixture():
     """
     Provide a Flask test client for testing application routes.
     Yields:
         FlaskClient: A test client for the Flask application.
     """
     app.config["TESTING"] = True
-    with app.test_client() as flask_client:
-        yield flask_client
+    with app.test_client() as temp_client:
+        yield temp_client
 
 
 @patch("app.collection")
@@ -129,7 +130,7 @@ def test_retry_request_all_failures(mock_post):
 
 # Tests for routes
 @patch("app.generate_stats_doc", return_value=str(ObjectId()))
-def test_home_route(flask_client: FlaskClient):
+def test_home_route(mock_generate_stats_doc, flask_client):
     """
     Test the home route of the application.
 
@@ -139,10 +140,11 @@ def test_home_route(flask_client: FlaskClient):
     response = flask_client.get("/")
     assert response.status_code == 200
     assert "db_object_id" in response.headers["Set-Cookie"]
+    mock_generate_stats_doc.assert_called_once()
 
 
 @patch("app.generate_stats_doc", return_value=str(ObjectId()))
-def test_home_route_with_existing_cookie(flask_client: FlaskClient):
+def test_home_route_with_existing_cookie(mock_generate_stats_doc, flask_client):
     """
     Test home route when a db_object_id cookie already exists.
 
@@ -152,10 +154,11 @@ def test_home_route_with_existing_cookie(flask_client: FlaskClient):
     flask_client.set_cookie("db_object_id", str(ObjectId()))
     response = flask_client.get("/")
     assert response.status_code == 200
+    mock_generate_stats_doc.assert_called_once()
 
 
 @patch("app.generate_stats_doc", return_value=str(ObjectId()))
-def test_index_route(flask_client: FlaskClient):
+def test_index_route(mock_generate_stats_doc, flask_client: FlaskClient):
     """
     Test index route
 
@@ -164,11 +167,14 @@ def test_index_route(flask_client: FlaskClient):
     """
     response = flask_client.get("/index")
     assert response.status_code == 200
+    mock_generate_stats_doc.assert_called_once()
 
 
 @patch("app.collection")
 @patch("app.generate_stats_doc", return_value=str(ObjectId()))
-def test_statistics_route(mock_collection, flask_client: FlaskClient):
+def test_statistics_route(
+    mock_generate_stats_doc, mock_collection, flask_client: FlaskClient
+):
     """
     Test statistics page route
 
@@ -186,11 +192,14 @@ def test_statistics_route(mock_collection, flask_client: FlaskClient):
     response = flask_client.get("/statistics")
     assert response.status_code == 200
     assert b"Statistics" in response.data
+    mock_generate_stats_doc.assert_called_once()
 
 
 @patch("app.retry_request")
 @patch("app.collection.update_one")
-def test_result_route_success(mock_retry_request, flask_client: FlaskClient):
+def test_result_route_success(
+    mock_retry_request, mock_update_one, flask_client: FlaskClient
+):
     """
     Test results route for a successful request
 
@@ -198,7 +207,7 @@ def test_result_route_success(mock_retry_request, flask_client: FlaskClient):
         client (FlaskClient): Flask client used to simulate HTTP requests.
     """
     mock_response = MagicMock()
-    mock_response.json.return_value = {"gesture": "Rock"}
+    mock_response.json.return_value = {"gesture": "Scissors"}
     mock_retry_request.return_value = mock_response
 
     mock_id = ObjectId()
@@ -210,7 +219,8 @@ def test_result_route_success(mock_retry_request, flask_client: FlaskClient):
     )
 
     assert response.status_code == 200
-    assert b"You win!" in response.data
+    assert b"AI wins!" in response.data
+    mock_update_one.assert_called_once()
 
 
 @patch("app.retry_request")
@@ -261,7 +271,7 @@ def test_result_route_ml_failure(mock_retry_request, flask_client: FlaskClient):
 
 
 @patch("app.retry_request")
-def test_result_route_no_image(flask_client: FlaskClient):
+def test_result_route_no_image(mock_retry_request, flask_client: FlaskClient):
     """
     Test the result route when there is no image
 
@@ -271,3 +281,4 @@ def test_result_route_no_image(flask_client: FlaskClient):
     response = flask_client.post("/result", data={}, content_type="multipart/form-data")
     assert response.status_code == 400
     assert b"No image file provided" in response.data
+    mock_retry_request.assert_not_called()

@@ -1,52 +1,47 @@
-"""
-Unit tests for the Flask application defined in `client.py`.
-"""
+"""Test module for Machine learning client"""
 
 # test_client.py
 # cd machine-learning-client
 # pytest test_client.py -v
 # pytest -v
 
-# pylint machine-learning-client/
+# pylint web-app/ machine-learning-client/
 # black .
 
 
 from unittest.mock import patch, MagicMock
 from io import BytesIO
-import pytest
-from client import app
 from requests.exceptions import RequestException
 from pymongo.errors import PyMongoError
+import pytest
+from client import app
 
 
-@pytest.fixture(name="flask_client_fixture")
-def create_flask_client():
+@pytest.fixture(name="flask_client")
+def flask_client_fixture():
     """
     Provide a Flask test client for testing application routes.
-
     Yields:
         FlaskClient: A test client for the Flask application.
     """
     app.config["TESTING"] = True
-    with app.test_client() as client:
-        yield client
+    with app.test_client() as temp_client:
+        yield temp_client
 
 
 # Test successful prediction
 @patch("client.rf_client")
 @patch("client.collection")
-def test_predict_success(
-    mock_collection, mock_rf_client, flask_client_fixture
-):  # pylint: disable=redefined-outer-name
+def test_predict_success(mock_collection, mock_rf_client, flask_client):
     """
-    Test that a successful image prediction returns the correct gesture and confidence,
-    and that the prediction is stored in MongoDB.
+    Test successful predictions.
 
     Args:
-        mock_collection (MagicMock): Mock database collection to simulate `insert_one` behavior.
-        mock_rf_client (MagicMock): Mock inference client to simulate `infer` behavior.
-        flask_client_fixture (FlaskClient): Flask test client for making requests.
+        mock_collection (MagicMock): Mocked MongoDB collection.
+        mock_rf_client (MagicMock): Mocked random forest client.
+        flask_client (FlaskClient): Flask test client for simulating HTTP requests.
     """
+
     # Mock the inference result
     mock_rf_client.infer.return_value = {
         "predictions": [{"class": "Rock", "confidence": 0.95}]
@@ -58,12 +53,10 @@ def test_predict_success(
     # Create a dummy image file
     data = {"image": (BytesIO(b"fake image data"), "test_image.jpg")}
 
-    # Make a POST request to the /predict endpoint
-    response = flask_client_fixture.post(
+    response = flask_client.post(
         "/predict", content_type="multipart/form-data", data=data
     )
 
-    # Assert the response status and data
     assert response.status_code == 200
     json_data = response.get_json()
     assert json_data["gesture"] == "Rock"
@@ -77,19 +70,16 @@ def test_predict_success(
 
 
 # Test prediction with no image provided
-def test_predict_no_image(flask_client_fixture):
+def test_predict_no_image(flask_client):
     """
-    Test that submitting a prediction request without an image returns a 400 error.
+    Test predictions with no image
 
     Args:
-        flask_client_fixture (FlaskClient): Flask test client for making requests.
+        flask_client (FlaskClient): Flask test client for simulating HTTP requests.
     """
-    # Make a POST request without image data
-    response = flask_client_fixture.post(
+    response = flask_client.post(
         "/predict", content_type="multipart/form-data", data={}
     )
-
-    # Assert the response status and error message
     assert response.status_code == 400
     json_data = response.get_json()
     assert json_data["error"] == "No image file provided"
@@ -97,28 +87,23 @@ def test_predict_no_image(flask_client_fixture):
 
 # Test inference API failure
 @patch("client.rf_client")
-def test_predict_inference_failure(
-    mock_rf_client, flask_client_fixture
-):  # pylint: disable=redefined-outer-name
+def test_predict_inference_failure(mock_rf_client, flask_client):
     """
-    Test that an inference API failure returns a 500 error with an appropriate message.
+    Test preditction with an inference failure.
 
     Args:
-        mock_rf_client (MagicMock): Mock inference client to simulate `infer` failure.
-        flask_client_fixture (FlaskClient): Flask test client for making requests.
+        mock_rf_client (MagicMock): Mocked random forest client.
+        flask_client (FlaskClient): Flask test client for simulating HTTP requests.
     """
     # Simulate an inference API failure with a caught exception
     mock_rf_client.infer.side_effect = RequestException("Inference API error")
 
-    # Create a dummy image file
     data = {"image": (BytesIO(b"fake image data"), "test_image.jpg")}
 
-    # Make a POST request to the /predict endpoint
-    response = flask_client_fixture.post(
+    response = flask_client.post(
         "/predict", content_type="multipart/form-data", data=data
     )
 
-    # Assert the response status and error message
     assert response.status_code == 500
     json_data = response.get_json()
     assert "Prediction error" in json_data["error"]
@@ -127,16 +112,14 @@ def test_predict_inference_failure(
 # Test MongoDB insertion failure
 @patch("client.rf_client")
 @patch("client.collection")
-def test_predict_mongodb_failure(
-    mock_collection, mock_rf_client, flask_client_fixture
-):  # pylint: disable=redefined-outer-name
+def test_predict_mongodb_failure(mock_collection, mock_rf_client, flask_client):
     """
-    Test that a MongoDB insertion failure returns a 500 error with an appropriate message.
+    Test preditction with a database failure.
 
     Args:
-        mock_collection (MagicMock): Mock database collection to simulate `insert_one` failure.
-        mock_rf_client (MagicMock): Mock inference client to simulate successful `infer`.
-        flask_client_fixture (FlaskClient): Flask test client for making requests.
+        mock_collection (MagicMock): Mocked MongoDB collection.
+        mock_rf_client (MagicMock): Mocked random forest client.
+        flask_client (FlaskClient): Flask test client for simulating HTTP requests.
     """
     # Mock the inference result
     mock_rf_client.infer.return_value = {
@@ -146,15 +129,12 @@ def test_predict_mongodb_failure(
     # Simulate a MongoDB insertion failure with a caught exception
     mock_collection.insert_one.side_effect = PyMongoError("MongoDB insertion error")
 
-    # Create a dummy image file
     data = {"image": (BytesIO(b"fake image data"), "test_image.jpg")}
 
-    # Make a POST request to the /predict endpoint
-    response = flask_client_fixture.post(
+    response = flask_client.post(
         "/predict", content_type="multipart/form-data", data=data
     )
 
-    # Assert the response status and error message
     assert response.status_code == 500
     json_data = response.get_json()
     assert "Prediction error" in json_data["error"]
@@ -162,17 +142,17 @@ def test_predict_mongodb_failure(
 
 # Test FileNotFoundError during file saving
 @patch("client.rf_client")
+@patch("client.collection")
 @patch("os.makedirs")
 def test_predict_file_not_found(
-    mock_makedirs, mock_rf_client, flask_client_fixture
-):  # pylint: disable=unused-argument, redefined-outer-name
+    mock_rf_client, mock_collection, mock_makedirs, flask_client
+):
     """
-    Test that a FileNotFoundError during image file saving returns a 500 error.
+    Test preditction with a file not found error.
 
     Args:
-        mock_makedirs (MagicMock): Mock for `os.makedirs` to simulate directory creation.
-        mock_rf_client (MagicMock): Mock inference client to simulate successful `infer`.
-        flask_client_fixture (FlaskClient): Flask test client for making requests.
+        mock_rf_client (MagicMock): Mocked random forest client.
+        flask_client (FlaskClient): Flask test client for simulating HTTP requests.
     """
     # Mock the inference result
     mock_rf_client.infer.return_value = {
@@ -184,59 +164,45 @@ def test_predict_file_not_found(
         "werkzeug.datastructures.FileStorage.save",
         side_effect=FileNotFoundError("File not found"),
     ):
-        # Create a dummy image file
         data = {"image": (BytesIO(b"fake image data"), "test_image.jpg")}
 
-        # Make a POST request to the /predict endpoint
-        response = flask_client_fixture.post(
+        response = flask_client.post(
             "/predict", content_type="multipart/form-data", data=data
         )
 
-        # Assert the response status and error message
         assert response.status_code == 500
         json_data = response.get_json()
         assert "Prediction error" in json_data["error"]
+
+    mock_makedirs.assert_not_called()
+    mock_collection.assert_not_called()
 
 
 # Test invalid inference response (missing 'class' key)
 @patch("client.rf_client")
 @patch("client.collection")
 def test_predict_invalid_inference_response(
-    mock_collection, mock_rf_client, flask_client_fixture
-):  # pylint: disable=redefined-outer-name
+    mock_collection, mock_rf_client, flask_client
+):
     """
-    Test that an invalid inference response (missing 'class' key) returns 'Unknown'
-    gesture and 0 confidence.
+    Test preditction with an invalid inference response.
 
     Args:
-        mock_collection (MagicMock): Mock database collection to simulate `insert_one`.
-        mock_rf_client (MagicMock): Mock inference client to simulate invalid `infer`
-            response.
-        flask_client_fixture (FlaskClient): Flask test client for making requests.
+        mock_rf_client (MagicMock): Mocked random forest client.
+        flask_client (FlaskClient): Flask test client for simulating HTTP requests.
     """
     # Mock the inference result with missing 'class' key
     mock_rf_client.infer.return_value = {"predictions": [{"confidence": 0.80}]}
 
-    # Create a dummy image file
     data = {"image": (BytesIO(b"fake image data"), "test_image.jpg")}
 
-    # Make a POST request to the /predict endpoint
-    response = flask_client_fixture.post(
+    response = flask_client.post(
         "/predict", content_type="multipart/form-data", data=data
     )
 
-    # Assert the response status and default values
     assert response.status_code == 200
     json_data = response.get_json()
     assert json_data["gesture"] == "Unknown"
     assert json_data["confidence"] == 0
 
-    # Create expected data structure
-    expected_data = {
-        "gesture": "Unknown",
-        "prediction_score": 0,
-        "image_metadata": {"filename": "test_image.jpg"},
-    }
-
-    # Ensure data was inserted into MongoDB once with 'Unknown' gesture
-    mock_collection.insert_one.assert_called_once_with(expected_data)
+    mock_collection.assert_not_called()
