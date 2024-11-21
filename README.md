@@ -15,14 +15,14 @@ This project is designed to allow you to play Rock-Paper-Scissors with your hand
 
 ## Instructions
 To build the image for the project simply run the command:
-'''bash
+```bash
 docker-compose build
-'''
+```
 Then to load the image, simple run:
-'''bash
+```bash
 docker-compose up
-'''
+```
 Alternatively, you can build and run in the the same command:
-'''bash
+```bash
 docker-compose up --build
-'''
+```
