@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  build_and_test_ml_client:
+  build_and_test_web_app:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -34,4 +34,4 @@ jobs:
 
       - name: Cleanup Docker images
         run: |
-          docker rmi web-app:latest ml-client:latest
+          docker rmi web-app:latest

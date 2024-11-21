@@ -34,4 +34,4 @@ jobs:
 
       - name: Cleanup Docker images
         run: |
-          docker rmi web-app:latest ml-client:latest
+          docker rmi ml-client:latest
