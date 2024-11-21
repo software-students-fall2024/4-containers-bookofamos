@@ -26,3 +26,8 @@ Alternatively, you can build and run in the the same command:
 ```bash
 docker-compose up --build
 ```
+Once the image is running, simply visit the web-app at:
+[Rock-Paper-Scissors](http://127.0.0.1:5003/)
+
+## Requirements
+The only requirement needed to run this project is [Docker](https://www.docker.com/). See install instruction on [their website](https://docs.docker.com/engine/install/).
