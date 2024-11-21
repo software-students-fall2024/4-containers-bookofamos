@@ -14,7 +14,7 @@ jobs:
     timeout-minutes: 15
     strategy:
       matrix:
-        python-version: ["3.9", "3.11"]
+        python-version: ["3.10", "3.11"]
 
     steps:
       - name: Checkout repository
@@ -28,18 +28,9 @@ jobs:
         run: |
           docker build -t web-app:latest .
 
-      - name: Build machine-learning-client Docker container
-        working-directory: machine-learning-client
-        run: |
-          docker build -t ml-client:latest .
-
       - name: Run tests in web-app Docker container
         run: |
           docker run --rm web-app pytest /app/test_app.py --verbose
-
-      - name: Run tests in machine-learning-client Docker container
-        run: |
-          docker run --rm ml-client pytest /app/test_client.py --verbose
 
       - name: Cleanup Docker images
         run: |
