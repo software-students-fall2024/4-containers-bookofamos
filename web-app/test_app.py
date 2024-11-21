@@ -200,7 +200,7 @@ def test_result_route_success(mock_retry_request, mock_update_one, flask_client:
         client (FlaskClient): Flask client used to simulate HTTP requests.
     """
     mock_response = MagicMock()
-    mock_response.json.return_value = {"gesture": "Rock"}
+    mock_response.json.return_value = {"gesture": "Scissors"}
     mock_retry_request.return_value = mock_response
 
     mock_id = ObjectId()
