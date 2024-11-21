@@ -7,6 +7,9 @@ Unit tests for the Flask application defined in `app.py`.
 # pytest test_app.py -v
 # pytest -v
 
+# pylint web-app/
+# black .
+
 
 from unittest.mock import patch, MagicMock
 from io import BytesIO
