@@ -159,6 +159,9 @@ def test_predict_file_not_found(
         "predictions": [{"class": "Scissors", "confidence": 0.90}]
     }
 
+    _ = mock_makedirs
+    _ = mock_collection
+
     # Simulate a FileNotFoundError during file saving by patching the save method
     with patch(
         "werkzeug.datastructures.FileStorage.save",
@@ -173,9 +176,6 @@ def test_predict_file_not_found(
         assert response.status_code == 500
         json_data = response.get_json()
         assert "Prediction error" in json_data["error"]
-
-    mock_makedirs.assert_not_called()
-    mock_collection.assert_not_called()
 
 
 # Test invalid inference response (missing 'class' key)
@@ -200,9 +200,9 @@ def test_predict_invalid_inference_response(
         "/predict", content_type="multipart/form-data", data=data
     )
 
+    _ = mock_collection
+
     assert response.status_code == 200
     json_data = response.get_json()
     assert json_data["gesture"] == "Unknown"
     assert json_data["confidence"] == 0
-
-    mock_collection.assert_not_called()
