@@ -278,8 +278,7 @@ def test_result_route_no_image(mock_retry_request, flask_client: FlaskClient):
     Args:
         client (FlaskClient):  Flask client used to simulate HTTP requests.
     """
-    response = flask_client.post(
-        "/result", data={}, content_type="multipart/form-data")
+    response = flask_client.post("/result", data={}, content_type="multipart/form-data")
     assert response.status_code == 400
     assert b"No image file provided" in response.data
     mock_retry_request.assert_not_called()
