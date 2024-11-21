@@ -1,4 +1,4 @@
-name: CI
+name: ML Client Build
 
 on:
   pull_request:
