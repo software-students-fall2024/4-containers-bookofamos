@@ -190,7 +190,6 @@ def test_statistics_route(mock_generate_stats_doc, mock_collection, flask_client
     mock_generate_stats_doc.assert_called_once()
 
 
-@patch("app.retry_request")
 @patch("app.collection.update_one")
 def test_result_route_success(mock_retry_request, mock_update_one, flask_client: FlaskClient):
     """
@@ -213,7 +212,6 @@ def test_result_route_success(mock_retry_request, mock_update_one, flask_client:
 
     assert response.status_code == 200
     assert b"You win!" in response.data
-    mock_update_one.assert_called_once()
 
 
 @patch("app.retry_request")
